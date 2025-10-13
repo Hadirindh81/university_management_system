@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Enrollment Detail{% endblock %}
+{% block content %}
+<h2>Enrollment Detail</h2>
+<p><strong>Student:</strong> {{ enrollment.student.first_name }} {{ enrollment.student.last_name }}</p>
+<p><strong>Course:</strong> {{ enrollment.course.code }} - {{ enrollment.course.name }}</p>
+<p><strong>Teacher:</strong> {% if enrollment.course.teacher %}{{ enrollment.course.teacher.first_name }} {{ enrollment.course.teacher.last_name }}{% else %}—{% endif %}</p>
+<p><strong>Status:</strong> {{ enrollment.get_status_display }}</p>
+<p><strong>Grade:</strong> {{ enrollment.grade }}</p>
+<p><strong>Date:</strong> {{ enrollment.enrollment_date }}</p>
+<a class="btn btn-secondary" href="{% url 'enrollments_list' %}">Back</a>
+{% endblock %}

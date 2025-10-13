@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4" style="max-width:700px">
+  <h2>Edit Profile</h2>
+  {% if messages %}{% for m in messages %}
+    <div class="alert alert-{{ m.tags }}">{{ m }}</div>
+  {% endfor %}{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <a class="btn btn-secondary ms-2" href="{% url 'profile' %}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

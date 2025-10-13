@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow-lg rounded-4 border-0">
+    <div class="card-body">
+      <h2 class="mb-4 text-center">
+        {% if form.instance.pk %}
+          Update Fee Record
+        {% else %}
+          Add New Fee Record
+        {% endif %}
+      </h2>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.errors %}
+          <div class="alert alert-danger">
+            <strong>Please correct the errors below:</strong>
+          </div>
+        {% endif %}
+
+        <div class="mb-3">
+          <label for="id_student" class="form-label">Student</label>
+          {{ form.student }}
+          {% if form.student.errors %}
+            <div class="text-danger small">{{ form.student.errors }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="id_total_amount" class="form-label">Total Amount</label>
+          {{ form.total_amount }}
+          {% if form.total_amount.errors %}
+            <div class="text-danger small">{{ form.total_amount.errors }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="id_amount_paid" class="form-label">Amount Paid</label>
+          {{ form.amount_paid }}
+          {% if form.amount_paid.errors %}
+            <div class="text-danger small">{{ form.amount_paid.errors }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="id_due_date" class="form-label">Due Date</label>
+          {{ form.due_date }}
+          {% if form.due_date.errors %}
+            <div class="text-danger small">{{ form.due_date.errors }}</div>
+          {% endif %}
+        </div>
+
+        <div class="d-flex justify-content-center gap-2 mt-4">
+          <button type="submit" class="btn btn-success px-4">
+            {% if form.instance.pk %}Update{% else %}Save{% endif %}
+          </button>
+          <a href="{% url 'fee_list' %}" class="btn btn-secondary px-4">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

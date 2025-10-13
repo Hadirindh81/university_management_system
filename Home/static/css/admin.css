@@ -1,0 +1,12 @@
+.card {
+  border-radius: 12px;
+  transition: all 0.3s ease-in-out;
+}
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+h3 {
+  font-weight: 700;
+  color: #1d3557;
+}

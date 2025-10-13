@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Teacher Form{% endblock %}
+{% block content %}
+<h2>{{ form.instance.pk|yesno:"Edit Teacher,Add Teacher" }}</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="btn btn-success">Save</button>
+  <a href="{% url 'teachers_list' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold">
+        Welcome, {{ student.first_name|default:request.user.get_full_name|default:request.user.username }}
+      </h2>
+      <p class="text-muted mb-0">Student Dashboard</p>
+    </div>
+    <div>
+      <a class="btn btn-outline-primary me-2" href="{% url 'profile' %}">
+        <i class="bi bi-person-circle me-1"></i> My Profile
+      </a>
+      <a class="btn btn-outline-secondary" href="{% url 'my_fee' %}">
+        <i class="bi bi-wallet2 me-1"></i> My Fees
+      </a>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row mb-4 text-center">
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0 rounded-3 h-100">
+        <div class="card-body">
+          <i class="bi bi-journal-bookmark display-6 text-primary"></i>
+          <h6 class="mt-2">Total Courses</h6>
+          <h3 class="fw-bold mb-0">{{ total_courses|default:"0" }}</h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0 rounded-3 h-100">
+        <div class="card-body">
+          <i class="bi bi-bar-chart-line display-6 text-success"></i>
+          <h6 class="mt-2">Average Attendance</h6>
+          <h3 class="fw-bold mb-0">
+            {{ avg_attendance|default:"0" }}{% if avg_attendance %}%{% endif %}
+          </h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0 rounded-3 h-100">
+        <div class="card-body">
+          <i class="bi bi-cash-stack display-6 text-warning"></i>
+          <h6 class="mt-2">Total Balance</h6>
+          <h3 class="fw-bold mb-0">₨ {{ total_balance|default:"0" }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enrolled Courses -->
+  <div class="card mb-4 shadow-sm border-0">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="bi bi-book me-2"></i>Enrolled Courses</h5>
+    </div>
+    <div class="card-body">
+      {% if courses_info %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Code</th>
+                <th>Course</th>
+                <th>Attendance</th>
+                <th>Latest Marks</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ci in courses_info %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ ci.course.code }}</td>
+                <td>{{ ci.course.name }}</td>
+                <td>{{ ci.attendance.percent|default:"—" }}{% if ci.attendance.percent %}%{% endif %}</td>
+                <td>
+                  {% if ci.assignments_with_marks %}
+                    {% for row in ci.assignments_with_marks|slice:":2" %}
+                      <div>
+                        <strong>{{ row.assignment.title }}</strong>:
+                        {{ row.mark.marks|default:"—" }}
+                      </div>
+                    {% endfor %}
+                    {% if ci.assignments_with_marks|length > 2 %}
+                      <small class="text-muted">+{{ ci.assignments_with_marks|length|add:-2 }} more</small>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">No assignments</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a class="btn btn-sm btn-outline-primary" href="{% url 'student_course_detail' ci.course.id %}">
+                    <i class="bi bi-box-arrow-up-right"></i> Open
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info">You are not enrolled in any courses yet.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Fee Summary -->
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-secondary text-white">
+      <h5 class="mb-0"><i class="bi bi-wallet2 me-2"></i>My Fees</h5>
+    </div>
+    <div class="card-body">
+      {% if fees %}
+        <div class="table-responsive">
+          <table class="table table-striped align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Total</th>
+                <th>Paid</th>
+                <th>Balance</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fee in fees|slice:":3" %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>₨ {{ fee.total_amount|default:"—" }}</td>
+                <td>₨ {{ fee.amount_paid|default:"—" }}</td>
+                <td>₨ {{ fee.balance|default:"—" }}</td>
+                <td>{{ fee.due_date|date:"M d, Y"|default:"—" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if fees|length > 3 %}
+          <div class="text-end">
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'my_fee' %}">View All Fees</a>
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="alert alert-info">No fee records found.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Courses{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h2>Courses</h2>
+
+  {# Only admins (profile.role == 'admin') can add courses #}
+  {% if user.is_authenticated and user.profile.role|lower == 'admin' %}
+    <a href="{% url 'course_add' %}" class="btn btn-primary">Add Course</a>
+  {% endif %}
+</div>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Code</th>
+      <th>Name</th>
+      <th>Department</th>
+      <th>Teacher</th>
+      <th>Credits</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for course in courses %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ course.code }}</td>
+      <td>{{ course.name }}</td>
+      <td>{{ course.department.name }}</td>
+      <td>
+        {% if course.teacher %}
+          {{ course.teacher.first_name }} {{ course.teacher.last_name }}
+        {% else %}
+          &mdash;
+        {% endif %}
+      </td>
+      <td>{{ course.credits }}</td>
+
+      <td>
+        {% if user.is_authenticated %}
+          {% with role=user.profile.role|lower %}
+            
+            {# Admin: full edit/delete #}
+            {% if role == 'admin' %}
+              <a class="btn btn-sm btn-warning" href="{% url 'course_edit' course.pk %}">Edit</a>
+              <a class="btn btn-sm btn-danger" href="{% url 'course_delete' course.pk %}">Delete</a>
+
+            {# Teacher: only if they own this course (safe checks) #}
+            {% elif role == 'teacher' %}
+              {% if course.teacher and course.teacher.user and course.teacher.user == user %}
+                <a class="btn btn-sm btn-warning" href="{% url 'course_edit' course.pk %}">Edit</a>
+              {% endif %}
+
+            {# Students / others: no action buttons #}
+            {% endif %}
+          {% endwith %}
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="7">No courses yet.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-center mb-4 fw-bold">Admin Dashboard</h2>
+
+  <!-- Overview Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card shadow-sm p-3 border-0 bg-light hover-shadow-sm">
+        <h6>Total Students</h6>
+        <h3>{{ total_students }}</h3>
+        <a href="{% url 'students_list' %}" class="text-decoration-none text-primary small">View students</a>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm p-3 border-0 bg-light hover-shadow-sm">
+        <h6>Total Teachers</h6>
+        <h3>{{ total_teachers }}</h3>
+        <a href="{% url 'teachers_list' %}" class="text-decoration-none text-primary small">View teachers</a>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm p-3 border-0 bg-light hover-shadow-sm">
+        <h6>Total Courses</h6>
+        <h3>{{ total_courses }}</h3>
+        <a href="{% url 'courses_list' %}" class="text-decoration-none text-primary small">View courses</a>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm p-3 border-0 bg-light hover-shadow-sm">
+        <h6>Pending Fees</h6>
+        <h3>{{ pending_fees_count }}</h3>
+        <a href="{% url 'fee_list' %}" class="text-decoration-none text-primary small">Manage fees</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card p-3 shadow-sm">
+        <h6 class="text-center fw-semibold mb-2">Students per Course</h6>
+        <canvas id="studentsPerCourseChart" height="200"></canvas>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card p-3 shadow-sm">
+        <h6 class="text-center fw-semibold mb-2">Fees: Collected vs Outstanding</h6>
+        <canvas id="feesPieChart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Course Management Table -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Course Management</h5>
+      <div>
+        <a class="btn btn-sm btn-primary" href="{% url 'course_add' %}">Add Course</a>
+        <a class="btn btn-sm btn-secondary" href="{% url 'teachers_list' %}">Assign Teacher</a>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Course</th>
+              <th>Code</th>
+              <th>Enrolled</th>
+              <th>Attendance %</th>
+              <th>Avg Mark</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in course_stats %}
+            <tr>
+              <td>{{ c.name }}</td>
+              <td>{{ c.code }}</td>
+              <td>{{ c.enroll_count }}</td>
+              <td>{% if c.attendance_percent %}{{ c.attendance_percent }}%{% else %}—{% endif %}</td>
+              <td>{% if c.avg_mark %}{{ c.avg_mark }}{% else %}—{% endif %}</td>
+              <td>
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'enrollments_list' %}?course={{ c.id }}">Enrollments</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-muted">No courses available</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!--  Recent Activities Section -->
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 bg-white hover-raise">
+        <div class="card-body">
+          <h6 class="fw-semibold text-primary"><i class="bi bi-journal-text me-2"></i>Recent Assignments</h6>
+          <ul class="list-group list-group-flush mt-2">
+            {% for a in recent_assignments %}
+              <li class="list-group-item border-0 ps-0 small">
+                <i class="bi bi-file-earmark-text text-primary me-1"></i>
+                {{ a.title }}
+                <small class="text-muted">({{ a.course.name }})</small>
+              </li>
+            {% empty %}
+              <li class="list-group-item text-muted border-0">No recent assignments</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 bg-white hover-raise">
+        <div class="card-body">
+          <h6 class="fw-semibold text-success"><i class="bi bi-cash-stack me-2"></i>Recent Fees</h6>
+          <ul class="list-group list-group-flush mt-2">
+            {% for f in recent_fees %}
+              <li class="list-group-item border-0 ps-0 small">
+                <i class="bi bi-currency-rupee text-success me-1"></i>
+                {{ f.student }} — Rs {{ f.amount_paid|default:"0" }}
+              </li>
+            {% empty %}
+              <li class="list-group-item text-muted border-0">No recent fees</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 bg-white hover-raise">
+        <div class="card-body">
+          <h6 class="fw-semibold text-info"><i class="bi bi-people me-2"></i>Recent Enrollments</h6>
+          <ul class="list-group list-group-flush mt-2">
+            {% for e in recent_enrollments %}
+              <li class="list-group-item border-0 ps-0 small">
+                <i class="bi bi-arrow-right-circle text-info me-1"></i>
+                {{ e.student }} → {{ e.course.name }}
+              </li>
+            {% empty %}
+              <li class="list-group-item text-muted border-0">No recent enrollments</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.js"></script>
+
+<script>
+  const labels = JSON.parse('{{ chart_labels_json|escapejs }}');
+  const values = JSON.parse('{{ chart_values_json|escapejs }}');
+  const feesChart = JSON.parse('{{ fees_chart_json|escapejs }}');
+
+  new Chart(document.getElementById('studentsPerCourseChart'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Students per Course',
+        data: values,
+        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1,
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+
+  new Chart(document.getElementById('feesPieChart'), {
+    type: 'pie',
+    data: {
+      labels: ['Collected', 'Outstanding'],
+      datasets: [{
+        data: [feesChart.collected, feesChart.outstanding],
+        backgroundColor: ['#4CAF50', '#F44336'],
+      }]
+    },
+    options: { responsive: true }
+  });
+</script>
+
+<style>
+  .hover-raise {
+    transition: all 0.3s ease;
+  }
+  .hover-raise:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  }
+</style>
+{% endblock %}

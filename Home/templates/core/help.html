@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Help - Imperial University Management System{% endblock %}
+
+{% block content %}
+<section class="py-5 text-center bg-light border-bottom">
+  <div class="container">
+    <h2 class="fw-bold text-primary mb-3">Help & Support</h2>
+    <p class="text-muted lead">
+      Need guidance on using the system? This page will help you understand the basics.
+    </p>
+  </div>
+</section>
+
+<section class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <h5 class="fw-semibold text-primary mb-3">How to Log In</h5>
+      <p class="text-muted">
+        Use your assigned username and password to log in through the appropriate portal 
+        — <strong>Admin</strong>, <strong>Teacher</strong>, or <strong>Student</strong>.
+      </p>
+
+      <h5 class="fw-semibold text-primary mt-4 mb-3">Forgot Password?</h5>
+      <p class="text-muted">
+        Contact the administrator to reset your account credentials securely.
+      </p>
+
+      <h5 class="fw-semibold text-primary mt-4 mb-3">Navigation Tips</h5>
+      <ul class="text-muted">
+        <li>Admin can manage students, teachers, and fees from the dashboard.</li>
+        <li>Teachers can view their courses, mark attendance, and upload assignments.</li>
+        <li>Students can check attendance, view marks, and monitor fee status.</li>
+      </ul>
+
+      <p class="text-muted mt-4 small">
+        Still have issues? Reach out to the IT Support team at 
+        <strong>support@imperialuniversity.edu.pk</strong>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer class="text-center text-muted py-3 border-top mt-5">
+  <p>© {{ current_year|default:2025 }} Imperial University Management System — All Rights Reserved.</p>
+</footer>
+{% endblock %}

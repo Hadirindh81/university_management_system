@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}{{ student.first_name }} {{ student.last_name }}{% endblock %}
+
+{% block content %}
+<h2>{{ student.first_name }} {{ student.last_name }}</h2>
+<ul>
+  <li><strong>Email:</strong> {{ student.email }}</li>
+  <li><strong>Phone:</strong> {{ student.phone }}</li>
+  <li><strong>Department:</strong> {{ student.department }}</li>
+  <li><strong>Enrolled:</strong> {{ student.enrollment_date }}</li>
+  <li><strong>Address:</strong> {{ student.address|linebreaksbr }}</li>
+</ul>
+
+<hr>
+<div class="d-flex justify-content-between align-items-center">
+  <h4>Enrollments</h4>
+  <a class="btn btn-primary" href="{% url 'enrollment_add' %}?student={{ student.pk }}">Add Enrollment</a>
+</div>
+
+<table class="table table-sm mt-2">
+  <thead>
+    <tr><th>#</th><th>Course</th><th>Teacher</th><th>Status</th><th>Grade</th><th>Date</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for e in enrollments %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td><a href="{% url 'course_detail' e.course.pk %}">{{ e.course.code }} - {{ e.course.name }}</a></td>
+        <td>{% if e.course.teacher %}{{ e.course.teacher.first_name }} {{ e.course.teacher.last_name }}{% else %}&mdash;{% endif %}</td>
+        <td>{{ e.get_status_display }}</td>
+        <td>{{ e.grade }}</td>
+        <td>{{ e.enrollment_date }}</td>
+        <td>
+          <a class="btn btn-sm btn-info" href="{% url 'enrollment_detail' e.pk %}">View</a>
+          <a class="btn btn-sm btn-warning" href="{% url 'enrollment_edit' e.pk %}">Edit</a>
+          <form method="post" action="{% url 'enrollment_delete' e.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-danger" onclick="return confirm('Delete this enrollment?')">Del</button>
+          </form>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7">No enrollments yet for this student.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a class="btn btn-secondary" href="{% url 'students_list' %}">Back to students</a>
+{% endblock %}

@@ -83,6 +83,8 @@ Clean interface using Bootstrap 5 — professional look on desktop and mobile.
    ```bash
    pip install django
    ```
+pip install -r requirements.txt
+
 
 5. Run the development server
 

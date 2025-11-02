@@ -1,11 +1,70 @@
 {% extends 'base.html' %}
-{% block title %}Teacher Detail{% endblock %}
+{% block title %}{{ teacher.first_name }} {{ teacher.last_name }}{% endblock %}
+
 {% block content %}
-<h2>{{ teacher.first_name }} {{ teacher.last_name }}</h2>
-<ul>
-  <li><strong>Email:</strong> {{ teacher.email }}</li>
-  <li><strong>Department:</strong> {{ teacher.department }}</li>
-  <li><strong>Hire Date:</strong> {{ teacher.hire_date }}</li>
-</ul>
-<a href="{% url 'teachers_list' %}" class="btn btn-secondary">Back to List</a>
+<div class="container mt-3">
+  <h2 class="mb-3">{{ teacher.first_name }} {{ teacher.last_name }}</h2>
+
+  <div class="row">
+    <div class="col-md-4">
+      {% if teacher.profile_image %}
+        <img src="{{ teacher.profile_image.url }}" class="img-fluid rounded shadow-sm mb-3" alt="Teacher Image">
+      {% else %}
+        <img src="https://via.placeholder.com/200x200?text=No+Image" class="img-fluid rounded shadow-sm mb-3" alt="No Image">
+      {% endif %}
+    </div>
+
+    <div class="col-md-8">
+      <ul class="list-group shadow-sm">
+        <li class="list-group-item"><strong>Teacher ID:</strong> {{ teacher.teacher_id }}</li>
+        <li class="list-group-item"><strong>Email:</strong> {{ teacher.email }}</li>
+        <li class="list-group-item"><strong>Contact Number:</strong> {{ teacher.contact_number|default:"—" }}</li>
+        <li class="list-group-item"><strong>Department:</strong> {{ teacher.department|default:"—" }}</li>
+        <li class="list-group-item"><strong>Hire Date:</strong> {{ teacher.hire_date }}</li>
+        <li class="list-group-item"><strong>Qualification:</strong> {{ teacher.get_qualification_display|default:"—" }}</li>
+        <li class="list-group-item"><strong>Specialization:</strong> {{ teacher.specialization|default:"—" }}</li>
+        <li class="list-group-item"><strong>Experience (Years):</strong> {{ teacher.experience_years }}</li>
+        <li class="list-group-item"><strong>Bio:</strong><br>{{ teacher.bio|linebreaksbr|default:"—" }}</li>
+      </ul>
+    </div>
+  </div>
+
+  <hr class="my-4">
+
+  <!-- Assigned Courses -->
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h4 class="mb-0">Assigned Courses</h4>
+    <a class="btn btn-primary btn-sm" href="{% url 'course_add' %}?teacher={{ teacher.pk }}">Add Course</a>
+  </div>
+
+  <table class="table table-bordered table-hover mt-2 shadow-sm">
+    <thead class="table-light">
+      <tr>
+        <th>#</th>
+        <th>Course Code</th>
+        <th>Course Name</th>
+        <th>Department</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for course in teacher.courses.all %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ course.code }}</td>
+          <td><a href="{% url 'course_detail' course.pk %}">{{ course.name }}</a></td>
+          <td>{{ course.department.name }}</td>
+          <td>
+            <a href="{% url 'course_detail' course.pk %}" class="btn btn-sm btn-info">View</a>
+            <a href="{% url 'course_edit' course.pk %}" class="btn btn-sm btn-warning">Edit</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="text-center">No courses assigned to this teacher.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a href="{% url 'teachers_list' %}" class="btn btn-secondary mt-3">Back to Teachers</a>
+</div>
 {% endblock %}

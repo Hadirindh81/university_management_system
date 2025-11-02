@@ -1,34 +1,34 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Home - Imperial University Management System{% endblock %}
 
 {% block content %}
+
 <!-- Hero Section -->
-<section class="py-5 text-center text-white" style="background: linear-gradient(to right, #003366, #0059b3);">
+<section class="hero-section text-white text-center py-5" style="background: linear-gradient(to right, #003366, #0059b3);">
   <div class="container">
-    <h1 class="display-5 fw-bold">Imperial University Management System</h1>
-    <p class="lead mt-3">
-      A smart solution to manage students, teachers, courses, and fees — efficiently and professionally.
+    <h1 class="display-5 fw-bold mb-3">Imperial University Management System</h1>
+    <p class="lead mb-4">
+      A modern platform for managing students, teachers, courses, and fees — all in one smart system.
     </p>
-    <div class="mt-4">
-      <a href="#" class="btn btn-light btn-lg mx-2">Login as Admin</a>
-      <a href="#" class="btn btn-outline-light btn-lg mx-2">Login as Teacher</a>
-      <a href="#" class="btn btn-outline-light btn-lg mx-2">Login as Student</a>
-    </div>
+
+    {% if not user.is_authenticated %}
+      <a href="{% url 'login' %}" class="btn btn-light btn-lg px-4 shadow-sm">Login</a>
+    {% endif %}
   </div>
 </section>
 
-<!-- Info Section -->
+<!-- System Highlights -->
 <section class="container text-center my-5">
   <div class="row g-4 justify-content-center">
-
     <div class="col-md-3">
       <div class="card shadow-sm border-0 h-100">
         <div class="card-body">
           <i class="bi bi-gear-wide-connected fs-1 text-primary mb-3"></i>
-          <h5 class="fw-semibold">Powerful Management</h5>
+          <h5 class="fw-semibold">Smart Administration</h5>
           <p class="text-muted small">
-            Handle academics, staff, and records in one place.
+            Streamline all departments, courses, and student management efficiently.
           </p>
         </div>
       </div>
@@ -38,9 +38,9 @@
       <div class="card shadow-sm border-0 h-100">
         <div class="card-body">
           <i class="bi bi-laptop fs-1 text-success mb-3"></i>
-          <h5 class="fw-semibold">Digital Access</h5>
+          <h5 class="fw-semibold">Digital Learning</h5>
           <p class="text-muted small">
-            Seamless access for students, teachers, and administrators.
+            Empower students and teachers with online access and resources.
           </p>
         </div>
       </div>
@@ -50,9 +50,9 @@
       <div class="card shadow-sm border-0 h-100">
         <div class="card-body">
           <i class="bi bi-bar-chart-line fs-1 text-info mb-3"></i>
-          <h5 class="fw-semibold">Smart Insights</h5>
+          <h5 class="fw-semibold">Progress Tracking</h5>
           <p class="text-muted small">
-            Visual reports and dashboards for better decision-making.
+            Analyze academic data and performance through smart insights.
           </p>
         </div>
       </div>
@@ -60,25 +60,123 @@
   </div>
 </section>
 
-<!-- About / Contact / Help Links -->
-<section class="bg-light py-4">
+<!-- Dashboard Quick Access (for logged in users) -->
+{% if user.is_authenticated %}
+<section class="container my-5">
+  <div class="text-center mb-4">
+    <h4 class="fw-bold text-secondary">Welcome, {{ user.first_name|default:user.username }} </h4>
+    <p class="text-muted small">Access your main sections quickly below.</p>
+  </div>
+
+  <div class="row g-4 justify-content-center">
+
+    {% if user.profile.role|lower == 'admin' %}
+      <!-- Admin: Manage Students -->
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center h-100">
+          <div class="card-body">
+            <i class="bi bi-people-fill fs-2 text-primary"></i>
+            <h6 class="mt-2 fw-semibold">Manage Students</h6>
+            <a href="{% url 'students_list' %}" class="btn btn-sm btn-outline-primary mt-2">Open</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin: Manage Teachers -->
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center h-100">
+          <div class="card-body">
+            <i class="bi bi-person-badge fs-2 text-success"></i>
+            <h6 class="mt-2 fw-semibold">Manage Teachers</h6>
+            <a href="{% url 'teachers_list' %}" class="btn btn-sm btn-outline-success mt-2">Open</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin: Manage Courses -->
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center h-100">
+          <div class="card-body">
+            <i class="bi bi-journal-text fs-2 text-info"></i>
+            <h6 class="mt-2 fw-semibold">Manage Courses</h6>
+            <a href="{% url 'courses_list' %}" class="btn btn-sm btn-outline-info mt-2">Open</a>
+          </div>
+        </div>
+      </div>
+
+      <!--  Admin: Register New User -->
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center h-100">
+          <div class="card-body">
+            <i class="bi bi-person-plus-fill fs-2 text-warning"></i>
+            <h6 class="mt-2 fw-semibold">Register New User</h6>
+            <a href="{% url 'register' %}" class="btn btn-sm btn-outline-warning mt-2">Register</a>
+          </div>
+        </div>
+      </div>
+
+    {% elif user.profile.role|lower == 'teacher' %}
+      <!-- Teacher: My Courses -->
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center h-100">
+          <div class="card-body">
+            <i class="bi bi-book fs-2 text-success"></i>
+            <h6 class="mt-2 fw-semibold">My Courses</h6>
+            <a href="{% url 'courses_list' %}" class="btn btn-sm btn-outline-success mt-2">Open</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Teacher: My Students -->
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center h-100">
+          <div class="card-body">
+            <i class="bi bi-people-fill fs-2 text-primary"></i>
+            <h6 class="mt-2 fw-semibold">My Students</h6>
+            <a href="{% url 'students_list' %}" class="btn btn-sm btn-outline-primary mt-2">Open</a>
+          </div>
+        </div>
+      </div>
+
+    {% elif user.profile.role|lower == 'student' %}
+      <!-- Student: My Courses -->
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center h-100">
+          <div class="card-body">
+            <i class="bi bi-journal-text fs-2 text-info"></i>
+            <h6 class="mt-2 fw-semibold">My Courses</h6>
+            <a href="{% url 'courses_list' %}" class="btn btn-sm btn-outline-info mt-2">Open</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Student: My Fees -->
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center h-100">
+          <div class="card-body">
+            <i class="bi bi-cash-stack fs-2 text-warning"></i>
+            <h6 class="mt-2 fw-semibold">My Fees</h6>
+            <a href="{% url 'my_fee' %}" class="btn btn-sm btn-outline-warning mt-2">Open</a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+<!-- Developer Credits -->
+<section class="bg-white py-4 mt-5 border-top">
   <div class="container text-center">
-    <h5 class="fw-semibold mb-3">Quick Links</h5>
-    <a href="{% url 'about' %}" class="text-decoration-none mx-2">About</a> |
-    <a href="{% url 'contact' %}" class="text-decoration-none mx-2">Contact</a> |
-    <a href="{% url 'help' %}" class="text-decoration-none mx-2">Help</a>
+    <p class="fw-semibold mb-1 text-secondary">Developed by</p>
+    <p class="text-muted small mb-0">
+      <strong>Muhammad Abdul Hadi</strong>, 
+      <strong>Muhammad Usman</strong>, 
+      <strong>Muhammad Yousuf</strong>, 
+      and <strong>Muhammad Ahmed</strong><br>
+      <span class="text-secondary">ADP Computer Science (Imperial College of Business Studies)</span>
+    </p>
   </div>
 </section>
 
-<!-- Footer -->
-<footer class="text-center py-4 mt-4 border-top" style="background-color: white; color: black;">
-  <p class="mb-1">
-    © {{ current_year|default:2025 }} Imperial University Management System — All Rights Reserved.
-  </p>
-  <p class="small mb-0">
-    Developed by <strong>Muhammad Abdul Hadi</strong>, <strong>Muhammad Usman</strong>,
-    <strong>Muhammad Yousuf</strong>, and <strong>Muhammad Ahmed</strong> —
-    ADP Computer Science Students.
-  </p>
-</footer>
 {% endblock %}

@@ -102,6 +102,7 @@
 
             <!-- Role-Based Links -->
             {% if user.profile.role|lower == 'admin' %}
+              <li class="nav-item"><a class="nav-link" href="{% url 'register' %}">Register</a></li>
               <li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}">Dashboard</a></li>
               <li class="nav-item"><a class="nav-link" href="{% url 'fee_list' %}">Fees</a></li>
               <li class="nav-item"><a class="nav-link" href="{% url 'students_list' %}">Students</a></li>
@@ -124,7 +125,6 @@
           {% else %}
             <!-- Public Links -->
             <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'register' %}">Register</a></li>
             <li class="nav-item"><a class="nav-link" href="{% url 'students_list' %}">Students</a></li>
             <li class="nav-item"><a class="nav-link" href="{% url 'courses_list' %}">Courses</a></li>
           {% endif %}
@@ -149,7 +149,7 @@
 
   <!-- Footer -->
   <footer class="text-center py-3 mt-5">
-    <p>&copy; 2025 University Management System - Created by H.U.Y.A  
+    <p>&copy; 2025 University Management System  
     </p>
   </footer>
 

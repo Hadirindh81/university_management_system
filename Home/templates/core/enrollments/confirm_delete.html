@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="card p-4 shadow-sm rounded">
+    <h3 class="text-center mb-4 text-danger">Confirm Enrollment Deletion</h3>
+    <p class="text-center">
+      Are you sure you want to delete the enrollment of 
+      <strong>{{ enrollment.student }}</strong> 
+      for course <strong>{{ enrollment.course }}</strong>?
+    </p>
+
+    <form method="post" class="text-center mt-4">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger px-4">Yes, Delete</button>
+      <a href="{% url 'enrollments_list' %}" class="btn btn-secondary px-4 ms-2">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

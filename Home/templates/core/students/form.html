@@ -1,29 +1,106 @@
 {% extends 'base.html' %}
 {% block title %}{{ title|default:"Student Form" }}{% endblock %}
+
 {% block content %}
 <div class="row">
   <div class="col-md-8">
-    <h2>{{ title|default:"Student" }}</h2>
+    <h2 class="mb-4">{{ title|default:"Add / Edit Student" }}</h2>
 
-    <form method="post" novalidate>
+    <form method="post" enctype="multipart/form-data" novalidate>
       {% csrf_token %}
-      {% for field in form %}
-        <div class="mb-3">
-          {{ field.label_tag }}
-          {{ field }}
-          {% if field.help_text %}
-            <div class="form-text">{{ field.help_text }}</div>
-          {% endif %}
-          {% for error in field.errors %}
-            <div class="text-danger small">{{ error }}</div>
-          {% endfor %}
+
+      <!-- Student ID (readonly) -->
+      <div class="mb-3">
+        {{ form.student_id.label_tag }}
+        {{ form.student_id }}
+      </div>
+
+      <!-- Basic Information -->
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          {{ form.first_name.label_tag }}
+          {{ form.first_name }}
         </div>
-      {% endfor %}
+        <div class="col-md-6 mb-3">
+          {{ form.last_name.label_tag }}
+          {{ form.last_name }}
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          {{ form.email.label_tag }}
+          {{ form.email }}
+        </div>
+        <div class="col-md-6 mb-3">
+          {{ form.phone.label_tag }}
+          {{ form.phone }}
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          {{ form.date_of_birth.label_tag }}
+          {{ form.date_of_birth }}
+        </div>
+        <div class="col-md-6 mb-3">
+          {{ form.department.label_tag }}
+          {{ form.department }}
+        </div>
+      </div>
+
+      <!-- Academic Info -->
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="id_academic_background" class="form-label">Academic Background</label>
+          {{ form.academic_background }}
+        </div>
+        <div class="col-md-3 mb-3">
+          {{ form.semester.label_tag }}
+          {{ form.semester }}
+        </div>
+        <div class="col-md-3 mb-3">
+          {{ form.cgpa.label_tag }}
+          {{ form.cgpa }}
+        </div>
+      </div>
+
+      <!-- Guardian Info -->
+      <div class="border rounded p-3 mb-3 bg-light">
+        <h5 class="mb-3">Guardian Information</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            {{ form.guardian_name.label_tag }}
+            {{ form.guardian_name }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.guardian_contact.label_tag }}
+            {{ form.guardian_contact }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Address -->
+      <div class="mb-3">
+        {{ form.address.label_tag }}
+        {{ form.address }}
+      </div>
+
+      <!-- Profile Image -->
+      <div class="mb-3">
+        {{ form.profile_image.label_tag }}
+        {{ form.profile_image }}
+        {% if form.instance.profile_image %}
+          <div class="mt-2">
+            <img src="{{ form.instance.profile_image.url }}" alt="Current Image"
+                 class="img-thumbnail shadow-sm" style="max-height: 120px;">
+          </div>
+        {% endif %}
+      </div>
 
       <button class="btn btn-primary" type="submit">Save</button>
       <a class="btn btn-outline-secondary" href="{% url 'students_list' %}">Cancel</a>
     </form>
-
   </div>
 </div>
 {% endblock %}

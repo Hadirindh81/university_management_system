@@ -10,7 +10,7 @@ class AssignmentForm(forms.ModelForm):
 class MarkForm(forms.ModelForm):
     class Meta:
         model = Mark
-        fields = ['score']
+        fields = ['marks_obtained']
 
 class AttendanceForm(forms.ModelForm):
     class Meta:

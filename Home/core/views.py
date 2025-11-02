@@ -44,18 +44,23 @@ def enrollments(request):
     return render(request, 'core/enrollments.html')
 
 
-# ==============
-# Students CRUD
-# ==============
+
+
+
+
+# ========================
+# STUDENTS CRUD
+# ========================
 
 @method_decorator(login_required, name='dispatch')
-@method_decorator(role_required(['admin','teacher']), name='dispatch')
+@method_decorator(role_required(['admin', 'teacher']), name='dispatch')
 class StudentListView(ListView):
     model = Student
     template_name = 'core/students/list.html'
     context_object_name = 'students'
     ordering = ['-enrollment_date']
     paginate_by = 25
+
 
 class StudentDetailView(DetailView):
     model = Student
@@ -66,10 +71,11 @@ class StudentDetailView(DetailView):
         # allow admin and teacher to access any student
         role = getattr(request.user, 'profile', None) and getattr(request.user.profile, 'role', None)
         role = str(role).lower() if role else None
+
         if role in ('admin', 'teacher'):
             return super().dispatch(request, *args, **kwargs)
 
-        # if student role → allow only if linked student.user == request.user
+        # allow only linked student to see own details
         if role == 'student':
             self.object = self.get_object()
             if getattr(self.object, 'user', None) == request.user:
@@ -78,7 +84,6 @@ class StudentDetailView(DetailView):
         messages.error(request, "You don't have permission to view that student.")
         return redirect('home')
 
-
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['enrollments'] = self.object.enrollments.select_related(
@@ -86,6 +91,8 @@ class StudentDetailView(DetailView):
         ).all()
         return ctx
 
+
+# ------- CREATE -------
 @method_decorator(login_required, name='dispatch')
 @method_decorator(role_required(['admin']), name='dispatch')
 class StudentCreateView(CreateView):
@@ -94,16 +101,18 @@ class StudentCreateView(CreateView):
     template_name = 'core/students/form.html'
     success_url = reverse_lazy('students_list')
 
+
+# ------- UPDATE -------
 @method_decorator(login_required, name='dispatch')
-@method_decorator(role_required(['admin','teacher']), name='dispatch')
+@method_decorator(role_required(['admin']), name='dispatch')
 class StudentUpdateView(UpdateView):
     model = Student
     form_class = StudentForm
     template_name = 'core/students/form.html'
+    success_url = reverse_lazy('students_list')
 
-    def get_success_url(self):
-        return reverse_lazy('student_detail', kwargs={'pk': self.object.pk})
 
+# ------- DELETE -------
 @method_decorator(login_required, name='dispatch')
 @method_decorator(role_required(['admin']), name='dispatch')
 class StudentDeleteView(DeleteView):
@@ -112,36 +121,52 @@ class StudentDeleteView(DeleteView):
     success_url = reverse_lazy('students_list')
 
 
-# ==============
-# Teachers CRUD
-# ==============
+
+# ========================
+# TEACHERS CRUD
+# ========================
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(role_required(['admin', 'teacher']), name='dispatch')
 class TeacherListView(ListView):
     model = Teacher
     template_name = 'core/teachers/list.html'
     context_object_name = 'teachers'
+
 
 class TeacherDetailView(DetailView):
     model = Teacher
     template_name = 'core/teachers/detail.html'
     context_object_name = 'teacher'
 
+
+# ------- CREATE -------
+@method_decorator(login_required, name='dispatch')
+@method_decorator(role_required(['admin']), name='dispatch')
 class TeacherCreateView(CreateView):
     model = Teacher
     form_class = TeacherForm
     template_name = 'core/teachers/form.html'
     success_url = reverse_lazy('teachers_list')
 
+
+# ------- UPDATE -------
+@method_decorator(login_required, name='dispatch')
+@method_decorator(role_required(['admin']), name='dispatch')
 class TeacherUpdateView(UpdateView):
     model = Teacher
     form_class = TeacherForm
     template_name = 'core/teachers/form.html'
     success_url = reverse_lazy('teachers_list')
 
+
+# ------- DELETE -------
+@method_decorator(login_required, name='dispatch')
+@method_decorator(role_required(['admin']), name='dispatch')
 class TeacherDeleteView(DeleteView):
     model = Teacher
     template_name = 'core/teachers/confirm_delete.html'
     success_url = reverse_lazy('teachers_list')
-
 
 # ==============
 # Departments CRUD
@@ -330,57 +355,50 @@ from datetime import date, datetime
 from .models import Course, Enrollment, Assignment, Mark, Attendance, Student, Teacher
 
 
-# ------------ Admin Dashboard -------------
-# ------------ Admin Dashboard -------------
-from django.shortcuts import render
+# ==========================
+# CORE / VIEWS.PY
+# DASHBOARDS (ADMIN, TEACHER, STUDENT)
+# ==========================
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum, Avg, F, Value
+from django.db.models import Sum, Avg, F, Value, FloatField, DecimalField
 from django.db.models.functions import Coalesce, Cast
-from django.db.models import FloatField, DecimalField
+from datetime import date, datetime
+import json
+
 from accounts.decorators import role_required
 from core.models import Student, Teacher, Course, Enrollment, Assignment, Mark, Attendance
 from fees.models import Fee
-import json
+from .forms_teacher import AssignmentForm, MarkForm, AttendanceForm
 
+
+# ==========================================================
+# ADMIN DASHBOARD (FINAL FIXED VERSION)
+# ==========================================================
 @login_required
 @role_required(['admin'])
 def admin_dashboard(request):
-    """
-    Enhanced admin dashboard (type-safe, JSON safe).
-    """
-
-    # Basic counts
     total_students = Student.objects.count()
     total_teachers = Teacher.objects.count()
     total_courses = Course.objects.count()
     total_assignments = Assignment.objects.count()
     total_enrollments = Enrollment.objects.count()
 
-    # Financials (avoid DecimalField & IntegerField conflict)
     total_paid = Fee.objects.aggregate(
         total=Coalesce(Sum('amount_paid'), Value(0, output_field=DecimalField()))
     )['total'] or 0
-
     total_outstanding = Fee.objects.aggregate(
         total=Coalesce(Sum('balance'), Value(0, output_field=DecimalField()))
     )['total'] or 0
-
     pending_fees_count = Fee.objects.filter(balance__gt=0).count()
 
-    # Figure out mark field name dynamically
-    mark_field = None
-    for f in Mark._meta.get_fields():
-        if getattr(f, 'name', None) in ('score', 'marks'):
-            mark_field = f.name
-            break
-
-    # Per-course stats
+    # Safe mark field (fixed: using marks_obtained instead of score)
     course_stats = []
     courses = Course.objects.all().order_by('name')
     for c in courses:
         enroll_count = Enrollment.objects.filter(course=c).count()
-
-        # Attendance stats
         total_sessions = Attendance.objects.filter(enrollment__course=c).values('date').distinct().count()
         total_present = Attendance.objects.filter(enrollment__course=c, present=True).count()
 
@@ -390,14 +408,13 @@ def admin_dashboard(request):
             if possible:
                 attendance_percent = int((total_present / possible) * 100)
 
-        # Average marks
         avg_mark = None
-        if mark_field:
-            qs = Mark.objects.filter(assignment__course=c).exclude(**{f'{mark_field}__isnull': True})
-            if qs.exists():
-                avg = qs.aggregate(avg=Avg(Cast(F(mark_field), FloatField())))['avg']
-                if avg is not None:
-                    avg_mark = round(float(avg), 2)
+        #  FIXED HERE: changed Mark → Marks, and score → marks_obtained
+        qs = Mark.objects.filter(assignment__course=c).exclude(marks_obtained__isnull=True)
+        if qs.exists():
+            avg = qs.aggregate(avg=Avg(Cast(F('marks_obtained'), FloatField())))['avg']
+            if avg is not None:
+                avg_mark = round(float(avg), 2)
 
         course_stats.append({
             'id': c.id,
@@ -408,26 +425,17 @@ def admin_dashboard(request):
             'avg_mark': avg_mark,
         })
 
-    #  Prepare chart data safely for JSON
-    chart_labels = [f"{cs['code']} {cs['name']}".strip() for cs in course_stats]
-    chart_values = [int(cs['enroll_count']) for cs in course_stats]
+    chart_labels_json = json.dumps([f"{cs['code']} {cs['name']}".strip() for cs in course_stats])
+    chart_values_json = json.dumps([int(cs['enroll_count']) for cs in course_stats])
+    fees_chart_json = json.dumps({
+        'collected': float(total_paid),
+        'outstanding': float(total_outstanding)
+    })
 
-    fees_chart = {
-        'collected': float(total_paid) if total_paid is not None else 0.0,
-        'outstanding': float(total_outstanding) if total_outstanding is not None else 0.0,
-    }
-
-    # JSON-safe serialization for template
-    chart_labels_json = json.dumps(chart_labels)
-    chart_values_json = json.dumps(chart_values)
-    fees_chart_json = json.dumps(fees_chart)
-
-    #  Define these BEFORE context
     recent_assignments = Assignment.objects.order_by('-created_at')[:6]
     recent_fees = Fee.objects.order_by('-id')[:6]
     recent_enrollments = Enrollment.objects.order_by('-id')[:6]
 
-    #  Now safely build the context
     context = {
         'total_students': total_students,
         'total_teachers': total_teachers,
@@ -448,25 +456,24 @@ def admin_dashboard(request):
 
     return render(request, 'core/dashboards/admin.html', context)
 
-# Last change of replacing the old dashboard with the error to this one # contain path errorcd
+
+# ==========================================================
+# TEACHER DASHBOARD
+# ==========================================================
 @login_required
 @role_required(['teacher'])
 def teacher_dashboard(request):
-    # Try linked teacher first
-    teacher = Teacher.objects.filter(user=request.user).first()
-    if not teacher and request.user.email:
-        teacher = Teacher.objects.filter(email__iexact=request.user.email).first()
+    teacher = Teacher.objects.filter(user=request.user).first() or \
+              Teacher.objects.filter(email__iexact=request.user.email).first()
 
     if not teacher:
         courses = Course.objects.none()
         enrollments = Enrollment.objects.none()
-        total_students = 0
-        total_assignments = 0
+        total_students = total_assignments = 0
     else:
         courses = Course.objects.filter(teacher=teacher)
         enrollments = Enrollment.objects.filter(course__in=courses).select_related('student')
-        # distinct students count across courses
-        total_students = Enrollment.objects.filter(course__in=courses).values('student').distinct().count()
+        total_students = enrollments.values('student').distinct().count()
         total_assignments = Assignment.objects.filter(course__in=courses).count()
 
     return render(request, 'core/dashboards/teacher.html', {
@@ -478,61 +485,16 @@ def teacher_dashboard(request):
     })
 
 
-
-
-
-
-
-#step 11 Teacher dashboard updates + polish 
-
-# core/views.py  (append under existing dashboards)
-from django.shortcuts import get_object_or_404
-from django.urls import reverse, reverse_lazy
-from django.contrib import messages
-from .models import Course, Enrollment, Assignment, Mark, Attendance, Student, Teacher
-from .forms_teacher import AssignmentForm, MarkForm, AttendanceForm
-from django.views.decorators.http import require_http_methods
-
-# Teacher: list of their courses
-@login_required
-@role_required(['teacher'])
-def teacher_courses(request):
-    teacher = Teacher.objects.filter(user=request.user).first()
-    if not teacher:
-        # fallback: attempt match by email
-        teacher = Teacher.objects.filter(email__iexact=request.user.email).first()
-
-    courses = Course.objects.filter(teacher=teacher) if teacher else Course.objects.none()
-    return render(request, 'core/teacher/courses_list.html', {'courses': courses, 'teacher': teacher})
-
-
-# Course detail: enrolled students, assignments
-# inside core/views.py (replace existing teacher_course_detail)
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
+# ------------------ Teacher: Course Detail ------------------
 @login_required
 @role_required(['teacher'])
 def teacher_course_detail(request, pk):
-    # find teacher linked to request.user, fallback to email
-    teacher = Teacher.objects.filter(user=request.user).first()
-    if not teacher and request.user.email:
-        teacher = Teacher.objects.filter(email__iexact=request.user.email).first()
+    teacher = Teacher.objects.filter(user=request.user).first() or \
+              Teacher.objects.filter(email__iexact=request.user.email).first()
 
     course = get_object_or_404(Course, pk=pk)
-
-    # ownership check (by pk or fallback to email)
-    is_owner = False
-    if teacher and course.teacher:
-        if getattr(course.teacher, 'pk', None) == getattr(teacher, 'pk', None):
-            is_owner = True
-        else:
-            t_email = getattr(course.teacher, 'email', '') or ''
-            u_email = getattr(request.user, 'email', '') or ''
-            if t_email.strip().lower() and u_email.strip().lower() and t_email.strip().lower() == u_email.strip().lower():
-                is_owner = True
-
-    if not is_owner:
-        messages.error(request, "You don't have permission to view that course.")
+    if not teacher or course.teacher != teacher:
+        messages.error(request, "You don't have permission to view this course.")
         return redirect('teacher_dashboard')
 
     enrollments = Enrollment.objects.filter(course=course).select_related('student')
@@ -545,31 +507,20 @@ def teacher_course_detail(request, pk):
     })
 
 
-
-
-# Create assignment
 # ------------------ Attendance ------------------
 @login_required
 @role_required(['teacher'])
 def attendance_mark(request, course_pk):
-    teacher = Teacher.objects.filter(user=request.user).first()
-    if not teacher and request.user.email:
-        teacher = Teacher.objects.filter(email__iexact=request.user.email).first()
+    teacher = Teacher.objects.filter(user=request.user).first() or \
+              Teacher.objects.filter(email__iexact=request.user.email).first()
 
     course = get_object_or_404(Course, pk=course_pk)
-
     if not teacher or course.teacher != teacher:
-        messages.error(request, "You don't have permission to mark attendance for this course.")
+        messages.error(request, "You don't have permission to mark attendance.")
         return redirect('teacher_dashboard')
 
     d = request.GET.get('date')
-    if d:
-        try:
-            the_date = datetime.strptime(d, "%Y-%m-%d").date()
-        except Exception:
-            the_date = date.today()
-    else:
-        the_date = date.today()
+    the_date = datetime.strptime(d, "%Y-%m-%d").date() if d else date.today()
 
     enrollments = Enrollment.objects.filter(course=course).select_related('student')
     existing = Attendance.objects.filter(enrollment__in=enrollments, date=the_date)
@@ -596,14 +547,12 @@ def attendance_mark(request, course_pk):
 @login_required
 @role_required(['teacher'])
 def assignment_create(request, course_pk):
-    teacher = Teacher.objects.filter(user=request.user).first()
-    if not teacher and request.user.email:
-        teacher = Teacher.objects.filter(email__iexact=request.user.email).first()
+    teacher = Teacher.objects.filter(user=request.user).first() or \
+              Teacher.objects.filter(email__iexact=request.user.email).first()
 
     course = get_object_or_404(Course, pk=course_pk)
-
     if not teacher or course.teacher != teacher:
-        messages.error(request, "You don't have permission to add assignments for this course.")
+        messages.error(request, "You don't have permission to add assignments.")
         return redirect('teacher_dashboard')
 
     if request.method == 'POST':
@@ -611,37 +560,55 @@ def assignment_create(request, course_pk):
         description = request.POST.get('description')
         due_date = request.POST.get('due_date')
         Assignment.objects.create(course=course, title=title, description=description, due_date=due_date)
-        messages.success(request, "Assignment created.")
+        messages.success(request, "Assignment created successfully.")
         return redirect('teacher_course_detail', pk=course.pk)
 
     return render(request, 'core/dashboards/assignment_form.html', {'course': course})
 
-
-# ------------------ Marks ------------------
+# ------------------ Marks Update  ------------------
 @login_required
 @role_required(['teacher'])
 def mark_edit(request, assignment_pk, student_pk):
-    teacher = Teacher.objects.filter(user=request.user).first()
-    if not teacher and request.user.email:
-        teacher = Teacher.objects.filter(email__iexact=request.user.email).first()
+    teacher = Teacher.objects.filter(user=request.user).first() or \
+              Teacher.objects.filter(email__iexact=request.user.email).first()
 
     assignment = get_object_or_404(Assignment, pk=assignment_pk)
     student = get_object_or_404(Student, pk=student_pk)
 
+    #  Security check
     if not teacher or assignment.course.teacher != teacher:
         messages.error(request, "You don't have permission to grade this assignment.")
         return redirect('teacher_dashboard')
 
-    mark, created = Mark.objects.get_or_create(assignment=assignment, student=student)
+    #  Create mark record if not exist
+    mark, _ = Mark.objects.get_or_create(
+        assignment=assignment,
+        student=student,
+        defaults={'total_marks': assignment.total_marks or 10}
+    )
 
     if request.method == 'POST':
+        marks_input = request.POST.get('marks', '').strip()
+
         try:
-            mark_value = float(request.POST.get('marks', 0))
+            marks_obtained = float(marks_input)
         except ValueError:
-            mark_value = 0
-        mark.marks = mark_value
+            messages.error(request, "Please enter a valid number for marks.")
+            return redirect('mark_edit', assignment_pk=assignment.pk, student_pk=student.pk)
+
+        total_marks = float(getattr(assignment, 'total_marks', 10))
+        if marks_obtained > total_marks:
+            messages.warning(request, f"Marks cannot exceed total ({total_marks}). Setting to total.")
+            marks_obtained = total_marks
+        elif marks_obtained < 0:
+            marks_obtained = 0
+
+        # Save cleanly
+        mark.marks_obtained = marks_obtained
+        mark.total_marks = total_marks
         mark.save()
-        messages.success(request, "Marks updated.")
+
+        messages.success(request, f"Marks saved successfully: {marks_obtained}/{total_marks}")
         return redirect('teacher_course_detail', pk=assignment.course.pk)
 
     return render(request, 'core/dashboards/mark_form.html', {
@@ -652,32 +619,18 @@ def mark_edit(request, assignment_pk, student_pk):
 
 
 
-# ---------- Student dashboard -----------
 
-# core/views.py (add/replace the student dashboard views section)
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from accounts.decorators import role_required
-
-from .models import Student, Course, Enrollment, Assignment, Mark, Attendance
-from fees.models import Fee
-
-
+# ==========================================================
+# STUDENT DASHBOARD
+# ==========================================================
 @login_required
 @role_required(['student'])
 def student_dashboard(request):
-    """
-    Student dashboard: shows enrolled courses, marks preview, attendance summary and fee summary.
-    Builds `courses_info` list so templates don't need custom filters.
-    """
-    # find linked student (OneToOne) or fallback by email
-    student = getattr(request.user, 'student_profile', None)
-    if not student and request.user.email:
-        student = Student.objects.filter(email__iexact=request.user.email).first()
+    student = getattr(request.user, 'student_profile', None) or \
+              Student.objects.filter(email__iexact=request.user.email).first()
 
     if not student:
-        messages.warning(request, "No student profile linked to your account. Contact admin.")
+        messages.warning(request, "No student profile linked to your account.")
         return render(request, 'core/dashboards/student.html', {
             'student': None,
             'courses_info': [],
@@ -687,14 +640,10 @@ def student_dashboard(request):
             'avg_attendance': None,
         })
 
-    # enrolled courses via Enrollment relationship
     courses = Course.objects.filter(enrollments__student=student).distinct()
+    courses_info, attendance_percents = [], []
 
-    # Build course info objects for templates
-    courses_info = []
-    attendance_percents = []
     for c in courses:
-        # assignments and student's marks (latest first)
         assignments = Assignment.objects.filter(course=c).order_by('-created_at')
         assignments_with_marks = []
         for a in assignments:
@@ -704,17 +653,17 @@ def student_dashboard(request):
                 'mark': mark_obj
             })
 
-        # attendance summary for this course (distinct session dates)
         total_sessions = Attendance.objects.filter(enrollment__course=c).values('date').distinct().count()
-        present_count = Attendance.objects.filter(enrollment__course=c, enrollment__student=student, present=True).count()
-        percent = None
-        if total_sessions > 0:
-            percent = int((present_count / total_sessions) * 100)
+        present_count = Attendance.objects.filter(
+            enrollment__course=c, enrollment__student=student, present=True
+        ).count()
+        percent = int((present_count / total_sessions) * 100) if total_sessions > 0 else None
+        if percent:
             attendance_percents.append(percent)
 
         courses_info.append({
             'course': c,
-            'assignments_with_marks': assignments_with_marks,   # list (may be empty)
+            'assignments_with_marks': assignments_with_marks,
             'attendance': {
                 'total_sessions': total_sessions,
                 'present': present_count,
@@ -722,12 +671,8 @@ def student_dashboard(request):
             }
         })
 
-    # Fees for this student
     fees = Fee.objects.filter(student=student).order_by('-id')
-    # compute totals (safe handling if Decimal)
     total_balance = sum((f.balance or 0) for f in fees)
-
-    # overall stats
     total_courses = courses.count()
     avg_attendance = int(sum(attendance_percents) / len(attendance_percents)) if attendance_percents else None
 
@@ -740,51 +685,43 @@ def student_dashboard(request):
         'avg_attendance': avg_attendance,
     })
 
-# ---------- Student course detail ----------
 
-# ---------- Student course detail ----------
-
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-
-from core.models import Course, Enrollment, Student, Attendance, Assignment, Mark
-
-
+# ==========================================================
+# STUDENT COURSE DETAIL
+# ==========================================================
 @login_required
 @role_required(['student'])
 def student_course_detail(request, pk):
-    """
-    Student course detail page:
-    - Shows assignments with student's marks
-    - Attendance history
-    - Linked fee information
-    """
-
-    # find linked student profile
-    student = getattr(request.user, 'student_profile', None)
-    if not student and request.user.email:
-        student = Student.objects.filter(email__iexact=request.user.email).first()
+    student = getattr(request.user, 'student_profile', None) or \
+              Student.objects.filter(email__iexact=request.user.email).first()
 
     course = get_object_or_404(Course, pk=pk)
-
-    # ensure student is enrolled
     enrollment = Enrollment.objects.filter(course=course, student=student).first()
     if not enrollment:
         messages.error(request, "You are not enrolled in this course.")
         return redirect('student_dashboard')
 
-    # assignments + student's marks
     assignments = Assignment.objects.filter(course=course).order_by('-created_at')
     assignments_with_marks = []
     for a in assignments:
         mark_obj = Mark.objects.filter(assignment=a, student=student).first()
-        assignments_with_marks.append({'assignment': a, 'mark': mark_obj})
+        total = float(getattr(a, 'total_marks', 10))
+        obtained = float(mark_obj.marks_obtained) if mark_obj and mark_obj.marks_obtained is not None else None
 
-    # attendance list for this enrollment (ordered desc)
+        if obtained is None:
+            status = "Pending"
+        elif obtained >= (total / 2):
+            status = "Passed"
+        else:
+            status = "Failed"
+
+        assignments_with_marks.append({
+            'assignment': a,
+            'mark': mark_obj,
+            'status': status,
+        })
+
     attendance_list = Attendance.objects.filter(enrollment=enrollment).order_by('-date')
-
-    # student fees (optional link to same student)
     fees = Fee.objects.filter(student=student).order_by('-id')
 
     return render(request, 'core/dashboards/student_course_detail.html', {

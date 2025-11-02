@@ -1,11 +1,95 @@
 {% extends 'base.html' %}
-{% block title %}Teacher Form{% endblock %}
+{% block title %}{{ title|default:"Add / Edit Teacher" }}{% endblock %}
+
 {% block content %}
-<h2>{{ form.instance.pk|yesno:"Edit Teacher,Add Teacher" }}</h2>
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit" class="btn btn-success">Save</button>
-  <a href="{% url 'teachers_list' %}" class="btn btn-secondary">Cancel</a>
-</form>
+<div class="row">
+  <div class="col-md-8">
+    <h2 class="mb-4">{{ title|default:"Teacher Form" }}</h2>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+
+      <!-- Teacher ID (readonly) -->
+      <div class="mb-3">
+        {{ form.teacher_id.label_tag }}
+        {{ form.teacher_id }}
+      </div>
+
+      <!-- Basic Info -->
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          {{ form.first_name.label_tag }}
+          {{ form.first_name }}
+        </div>
+        <div class="col-md-6 mb-3">
+          {{ form.last_name.label_tag }}
+          {{ form.last_name }}
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          {{ form.email.label_tag }}
+          {{ form.email }}
+        </div>
+        <div class="col-md-6 mb-3">
+          {{ form.contact_number.label_tag }}
+          {{ form.contact_number }}
+        </div>
+      </div>
+
+      <!-- Department & Hire Date -->
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          {{ form.department.label_tag }}
+          {{ form.department }}
+        </div>
+        <div class="col-md-6 mb-3">
+          {{ form.hire_date.label_tag }}
+          {{ form.hire_date }}
+        </div>
+      </div>
+
+      <!-- Qualification Info -->
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          {{ form.qualification.label_tag }}
+          {{ form.qualification }}
+        </div>
+        <div class="col-md-6 mb-3">
+          {{ form.specialization.label_tag }}
+          {{ form.specialization }}
+        </div>
+      </div>
+
+      <!-- Experience -->
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          {{ form.experience_years.label_tag }}
+          {{ form.experience_years }}
+        </div>
+      </div>
+
+      <!-- Bio -->
+      <div class="mb-3">
+        {{ form.bio.label_tag }}
+        {{ form.bio }}
+      </div>
+
+      <!-- Profile Image -->
+      <div class="mb-3">
+        {{ form.profile_image.label_tag }}
+        {{ form.profile_image }}
+        {% if form.instance.profile_image %}
+          <div class="mt-2">
+            <img src="{{ form.instance.profile_image.url }}" alt="Profile Image" class="img-thumbnail shadow-sm" style="max-height: 120px;">
+          </div>
+        {% endif %}
+      </div>
+
+      <button class="btn btn-primary" type="submit">Save</button>
+      <a href="{% url 'teachers_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+  </div>
+</div>
 {% endblock %}

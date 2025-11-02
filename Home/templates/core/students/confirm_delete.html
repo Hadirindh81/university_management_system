@@ -1,12 +1,19 @@
 {% extends 'base.html' %}
-{% block title %}Confirm delete{% endblock %}
-{% block content %}
-<h4>Delete student</h4>
-<p>Are you sure you want to delete <strong>{{ object }}</strong>?</p>
+{% block title %}Confirm Student Deletion{% endblock %}
 
-<form method="post">
-  {% csrf_token %}
-  <button class="btn btn-danger" type="submit">Yes, delete</button>
-  <a class="btn btn-secondary" href="{% url 'students_list' %}">Cancel</a>
-</form>
+{% block content %}
+<div class="container my-5">
+  <div class="card shadow border-0">
+    <div class="card-body text-center">
+      <h3 class="text-danger mb-4">Confirm Student Deletion</h3>
+      <p>Are you sure you want to delete student <strong>{{ object }}</strong>?</p>
+
+      <form method="post" class="mt-4">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger px-4">Yes, Delete</button>
+        <a href="{% url 'students_list' %}" class="btn btn-secondary px-4 ms-2">Cancel</a>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}
